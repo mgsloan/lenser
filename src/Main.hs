@@ -21,7 +21,10 @@ data X
   deriving Show
 
 $(lenser[d|
+    _test :: Lens' Test String
     _test = lensFor test
+
+    _y :: Traversal' X Int
     _y = traversalFor [x, y]
   |])
 
