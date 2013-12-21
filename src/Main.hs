@@ -1,8 +1,30 @@
--- | Main entry point to the application.
+{-# LANGUAGE TemplateHaskell #-}
+
 module Main where
 
--- | The main entry point.
-main :: IO ()
+import Lenser
+import Language.Haskell.TH
+import Language.Haskell.TH.Lift
+import Language.Haskell.TH.Instances
+import Control.Lens
+
+--FIXME: Something is wrong with multi-field constructors
+
+data Test
+  = Test { test :: String }
+  deriving Show
+
+data X
+  = X { x :: Int }
+  | Y { y :: Int }
+  | Z
+  deriving Show
+
+$(lenser[d|
+    _test = lensFor test
+    _y = traversalFor [x, y]
+  |])
+
 main = do
-    putStrLn "Welcome to FP Haskell Center!"
-    putStrLn "Have a good day!"
+  print (Test "hello" & _test .~ "world")
+  print (Y 1 & _y .~ 3)

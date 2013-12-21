@@ -4,6 +4,10 @@ module-template: ! 'module MODULE_NAME where
 extensions: {}
 environment: ghc-7.4.2-stable-13.09
 cabal-file: project.cabal
+hidden-packages: ''
 version: 1
+extra-packages: ! 'th-lift-0.5.6
+
+  th-orphans-0.7'
 ghc-args: []
 excluded-modules: []
