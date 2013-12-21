@@ -3,9 +3,6 @@
 module Main where
 
 import Lenser
-import Language.Haskell.TH
-import Language.Haskell.TH.Lift
-import Language.Haskell.TH.Instances
 import Control.Lens
 
 --FIXME: Something is wrong with multi-field constructors
@@ -28,6 +25,7 @@ $(lenser[d|
     _y = traversalFor [x, y]
   |])
 
+main :: IO ()
 main = do
   print (Test "hello" & _test .~ "world")
   print (Y 1 & _y .~ 3)

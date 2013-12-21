@@ -9,5 +9,6 @@ version: 1
 extra-packages: ! 'th-lift-0.5.6
 
   th-orphans-0.7'
-ghc-args: []
+ghc-args:
+- -Wall
 excluded-modules: []

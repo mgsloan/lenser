@@ -5,7 +5,7 @@ module Lenser where
 
 import Control.Applicative
 import Control.Lens
-import Control.Monad ((<=<), when, replicateM)
+import Control.Monad (when, replicateM)
 import Data.Either (lefts)
 import Data.List as List
 import Data.Maybe
@@ -32,20 +32,21 @@ lenser quotation = do
         case expr of
           AppE (VarE (nameBase -> "lensFor")) (VarE fn) -> do
             ty <- typeFromField fn
-            cons <- consFromType ty
-            (:[]) <$> makeFieldLensBody False ln (map (, [fn]) cons) Nothing
+            xs <- consFromType ty
+            (:[]) <$> makeFieldLensBody False ln (map (, [fn]) xs) Nothing
           AppE (VarE (nameBase -> "traversalFor")) (toListOf (_ListE.traverse._VarE) -> fns) -> do
             ((fn1, ty):tys) <- mapM (\fn -> (fn,) <$> typeFromField fn) fns
             let wrongTypes = filter ((/= ty) . snd) tys
-            cons <- consFromType ty
+            xs <- consFromType ty
             when (not $ null wrongTypes) $ fail $ "In the declaration of the " ++ show ln ++
               " traversal, the specified fields come from different types:\n" ++
               show ((fn1, ty):wrongTypes)
-            let conList = flip map cons $ \con ->
-                  ( con
-                  , filter (`elem` toListOf (conNamedFields._1) con) fns
+            let conList = flip map xs $ \x ->
+                  ( x
+                  , filter (`elem` toListOf (conNamedFields._1) x) fns
                   )
             (:[]) <$> makeFieldLensBody True ln conList Nothing
+          _ -> fail $ "In the rhs of " ++ show ln ++ ", expected either a lensFor or traversalFor expression."
       ValD (VarP ln) _ _ -> wrongForm ln
       ValD _ _ _ -> fail "Lenser doesn't support pattern bindings."
       FunD ln _ -> wrongForm ln
@@ -54,46 +55,6 @@ lenser quotation = do
   where
     wrongForm ln = fail $ show ln ++ " does not have the form 'x = ...' expected of lenser declarations."
 
-consFromType :: Name -> Q [Con]
-consFromType ty = do
-  info <- reify ty
-  case info of
-    TyConI (toListOf constructors -> cons@(_:_)) -> return cons
-    _ -> fail $ show ty ++ " is not a datatype."
-
-typeFromField :: Name -> Q Name
-typeFromField fn = do
-  info <- reify fn
-  case info of
-    VarI _ ((^?! traverseArrowT) -> (^?! traverseAppT) -> ConT cn) _ _ -> return cn
-    _ -> fail $ show fn ++ " is not a field."
-
-traverseAppE :: Traversal' Exp Exp
-traverseAppE f (AppE l r) = AppE <$> traverseAppE f l <*> f r
-traverseAppE f t = f t
-
-_ListE :: Prism' Exp [Exp]
-_ListE = prism' ListE $ \e -> case e of
-  ListE es -> Just es
-  _ -> Nothing
-
-_VarE :: Prism' Exp Name
-_VarE = prism' VarE $ \e -> case e of
-  VarE n-> Just n
-  _ -> Nothing
-
-traverseAppT :: Traversal' Type Type
-traverseAppT f (AppT l r) = AppT <$> traverseAppT f l <*> f r
-traverseAppT f t = f t
-
-traverseArrowT :: Traversal' Type Type
-traverseArrowT f (AppT (AppT ArrowT l) r)
-  = (\l' r' -> AppT (AppT ArrowT l') r') <$> f l <*> traverseArrowT f r
-traverseArrowT f t = f t
-
-ignoreForall :: Lens' Type Type
-ignoreForall f (ForallT tvs ctx t) = ForallT tvs ctx <$> f t
-ignoreForall f t = f t
 
 -- Direct from Control.Lens.TH
 
