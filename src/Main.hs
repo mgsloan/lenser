@@ -17,7 +17,7 @@ data X
   | Z
   deriving Show
 
-$(lenser[d|
+$(lenser [d|
     _test :: Lens' Test String
     _test = lensFor test
 
