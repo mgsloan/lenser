@@ -17,6 +17,7 @@ consFromType ty = do
   info <- reify ty
   case info of
     TyConI (toListOf constructors -> xs@(_:_)) -> return xs
+    TyConI _ -> fail $ show ty ++ " has no constructors."
     _ -> fail $ show ty ++ " is not a datatype."
 
 typeFromField :: Name -> Q Name
